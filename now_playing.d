@@ -29,8 +29,8 @@ void kill_get_song_loop(string pid_file) {
 void print_song(string playing_file) {
     if (exists(playing_file)) {
         auto f = File(playing_file, "r");
-        string song = f.readln();
-        writeln(strip(song));
+        string song = strip(f.readln());
+        writeln(song);
         return;
     }
 
