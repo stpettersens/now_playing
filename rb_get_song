@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# This Python program will get the current song from Rhythmbox.
+# It should be invoked as a process by now_playing.
+import dbus
+import dbus.mainloop.glib
+from gi.repository import GLib
+
+playing_file = '/tmp/rb/playing'
+__artist = ''
+
+def dump_playing_file():
+    with open(playing_file, 'w') as f:
+        f.write('...')
+
+if __name__ == "__main__":
+    dump_playing_file()
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    player = bus.get_object("org.mpris.MediaPlayer2.rhythmbox", "/org/mpris/MediaPlayer2")
+    iface = dbus.Interface(player, "org.freedesktop.DBus.Properties")
+
+    def on_metadata_changed(interface, changed_props, invalidated_props):
+        if "Metadata" in changed_props:
+            meta = changed_props["Metadata"]
+            artist = meta.get(dbus.String("xesam:artist"), "")
+            title = meta.get(dbus.String("xesam:title"), "")
+
+            global _artist
+            _artist = str(artist).split(".String('")[1]
+            _artist = _artist.split("'")[0]
+
+        try:
+            if _artist != "":
+                with open(playing_file, 'w') as f:
+                    f.write(f'{_artist} - {title}')
+        except:
+            pass
+
+    iface.connect_to_signal("PropertiesChanged", on_metadata_changed)
+    GLib.MainLoop().run()
