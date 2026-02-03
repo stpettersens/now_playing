@@ -6,7 +6,7 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 
 playing_file = '/tmp/rb/playing'
-__artist = ''
+_artist = ''
 
 def dump_playing_file():
     with open(playing_file, 'w') as f:
