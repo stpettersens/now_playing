@@ -12,7 +12,7 @@ void create_working_dir() {
     string dir = "/tmp/rb";
     if (!exists(dir)) {
         string user = fromStringz(getlogin()).idup;
-        executeShell(format("sudo -u %s mkdir -p %s", user, dir));
+        executeShell(format("doas -u %s mkdir -p %s", user, dir));
     }
 }
 
