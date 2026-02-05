@@ -10,9 +10,8 @@ import core.sys.posix.unistd; // getlogin
 
 void create_working_dir() {
     string dir = "/tmp/rb";
-    auto login = getlogin();
-    string user = fromStringz(login).idup;
     if (!exists(dir)) {
+        string user = fromStringz(getlogin()).idup;
         executeShell(format("sudo -u %s mkdir -p %s", user, dir));
     }
 }
