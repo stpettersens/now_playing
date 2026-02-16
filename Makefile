@@ -5,12 +5,12 @@ make:
 	ldc2 $(SRC)
 	rm $(TARGET).o
 	strip $(TARGET)
+
+compress:
 	upx -9 $(TARGET)
 
 install:
 	@echo "Please run as doas/sudo."
-	cp rb_get_song /usr/local/bin
-	chmod +x /usr/local/bin/rb_get_song
 	cp $(TARGET) /usr/local/bin
 
 clean:
