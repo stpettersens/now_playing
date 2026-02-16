@@ -38,8 +38,6 @@ int print_playing(string[] players) {
         return -1;
     }
 
-    writeln(players);
-
     auto playing = executeShell(format
     ("playerctl --player=%s metadata --format \"{{ artist }} - {{ title }}\" | cut -c1-42",
     strip(players.join(","))));
