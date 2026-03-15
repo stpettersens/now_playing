@@ -32,21 +32,29 @@ bool check_not_playing() {
     return result.status != 0;
 }
 
-int print_playing(string[] players) {
+int print_playing(string[] players, string[] filters) {
     if (players.length == 0) {
         writeln("Error: No players configured.");
         return -1;
     }
 
-    auto playing = executeShell(format
-    ("playerctl --player=%s metadata --format \"{{ artist }} - {{ title }}\" | cut -c1-42",
-    strip(players.join(","))));
+    string cmd = format("playerctl --player=%s metadata --format \"{{ artist }} - {{ title }}\"",
+    strip(players.join(",")));
 
-    writeln(playing.output);
+    auto playing = executeShell(format("%s | cut -c1-48", strip(cmd)));
+
+    string track = strip(playing.output);
+    foreach (f; filters) {
+       track = track.replace(f, "");
+    }
+
+    track = track.replace("-  ", "-");
+
+    writeln(strip(track));
     return 0;
 }
 
-string[] read_cfg(string cfg_file) {
+string[] read_players_cfg(string cfg_file) {
     string[] players = new string[0];
     if (!exists(cfg_file))
          return players;
@@ -65,6 +73,25 @@ string[] read_cfg(string cfg_file) {
     return players;
 }
 
+string[] read_filters_cfg(string cfg_file) {
+    string[] filters = new string[0];
+    if (!exists(cfg_file))
+        return filters;
+
+    auto f = File(cfg_file);
+    foreach (line; f.byLine()) {
+        string l = strip(to!string(line));
+        if (l.startsWith('#')) {
+            // Ignore any comment lines in configuration file.
+            continue;
+        }
+
+        filters ~= l; // Append each filter.
+    }
+
+    return filters;
+}
+
 int main() {
     if (!have_playerctl())
         return -1;
@@ -74,6 +101,9 @@ int main() {
         return 0;
     }
 
+    string cfg_dir = "/etc/now_playing";
+
     return print_playing
-    (read_cfg("/etc/now_playing.cfg"));
+    (read_players_cfg(format("%s/players.cfg", cfg_dir)),
+     read_filters_cfg(format("%s/filters.cfg", cfg_dir)));
 }

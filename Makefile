@@ -1,5 +1,7 @@
 SRC = now_playing.d
-CFG = now_playing.cfg
+CFG_PLAYERS = players.cfg
+CFG_FILTERS = filters.cfg
+CFG_DIR = /etc/now_playing
 TARGET = now_playing
 
 make:
@@ -13,7 +15,9 @@ compress:
 install:
 	@echo "Please run as doas/sudo."
 	cp $(TARGET) /usr/local/bin
-	cp $(CFG) /etc
+	mkdir -p $(CFG_DIR)
+	cp $(CFG_PLAYERS) $(CFG_DIR)
+	cp $(CFG_FILTERS) $(CFG_DIR)
 
 clean:
 	rm $(TARGET)
