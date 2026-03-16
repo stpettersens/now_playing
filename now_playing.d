@@ -51,6 +51,7 @@ int print_playing(string[] players, string[] filters, int num_chars) {
 
     // Fix spacing.
     track = track.replace("-  ", "-");
+    track = track.replace("  ", " ");
 
     writeln(strip(track));
     return 0;
