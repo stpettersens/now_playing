@@ -110,8 +110,8 @@ int main(string[] args) {
     immutable string program = "now_playing";
     int num_chars = 48; // Truncate now_playing track to 48 characters by default.
 
-    int i = 0;
     if (args.length > 0) {
+        int i = 0;
         foreach (a; args) {
             if (a == "-h" || a == "--help") {
                 return display_usage(program, num_chars);
