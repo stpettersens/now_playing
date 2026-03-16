@@ -18,7 +18,7 @@ bool have_playerctl() {
     if (result.status != 0) {
         // When playerctl is not found:
         // Prompt to install with typical package managers.
-        writeln("Please install playerctl:\n");
+        writeln("Please install playerctl.\n");
         writefln("%s apt install playerctl", sudo);
         writefln("%s pacman -S playerctl", sudo);
         writefln("%s xbps-install -S playerctl\n", sudo);
@@ -32,7 +32,7 @@ bool check_not_playing() {
     return result.status != 0;
 }
 
-int print_playing(string[] players, string[] filters) {
+int print_playing(string[] players, string[] filters, int num_chars) {
     if (players.length == 0) {
         writeln("Error: No players configured.");
         return -1;
@@ -41,13 +41,15 @@ int print_playing(string[] players, string[] filters) {
     string cmd = format("playerctl --player=%s metadata --format \"{{ artist }} - {{ title }}\"",
     strip(players.join(",")));
 
-    auto playing = executeShell(format("%s | cut -c1-48", strip(cmd)));
-
+    auto playing = executeShell(format("%s | cut -c1-%d", strip(cmd), num_chars));
     string track = strip(playing.output);
+
+    // Apply filters to track.
     foreach (f; filters) {
        track = track.replace(f, "");
     }
 
+    // Fix spacing.
     track = track.replace("-  ", "-");
 
     writeln(strip(track));
@@ -92,7 +94,44 @@ string[] read_filters_cfg(string cfg_file) {
     return filters;
 }
 
-int main() {
+int display_error(string message) {
+    writefln("Error: %s.\n", message);
+    return -1;
+}
+
+int display_usage(string program, int num_chars) {
+    writefln("Usage: %s [-h|--help][-t|--truncate n]", program);
+    writeln("\nWhere n is number of characters to truncate to (n > 0).");
+    writefln("If the -t switch is omitted, that is %d chars.", num_chars);
+    return 0;
+}
+
+int main(string[] args) {
+    immutable string program = "now_playing";
+    int num_chars = 48; // Truncate now_playing track to 48 characters by default.
+
+    int i = 0;
+    if (args.length > 0) {
+        foreach (a; args) {
+            if (a == "-h" || a == "--help") {
+                return display_usage(program, num_chars);
+            }
+            else if ((args.length == 3)
+            && (a == "-t" || a == "--truncate")) {
+                try {
+                    num_chars = to!int(args[(i+1)]);
+                    if (num_chars <= 0) {
+                        return display_error("Truncation must be > 0 chars");
+                    }
+                }
+                catch (Exception) {
+                    return display_error("Truncation must be an integer");
+                }
+            }
+            i++;
+        }
+    }
+
     if (!have_playerctl())
         return -1;
 
@@ -101,9 +140,10 @@ int main() {
         return 0;
     }
 
-    string cfg_dir = "/etc/now_playing";
+    immutable string cfg_dir = "/etc/now_playing";
 
     return print_playing
     (read_players_cfg(format("%s/players.cfg", cfg_dir)),
-     read_filters_cfg(format("%s/filters.cfg", cfg_dir)));
+     read_filters_cfg(format("%s/filters.cfg", cfg_dir)),
+     num_chars);
 }
