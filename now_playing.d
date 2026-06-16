@@ -32,10 +32,14 @@ bool check_not_playing() {
     return result.status != 0;
 }
 
+int display_error(string message) {
+    writefln("Error: %s.\n", message);
+    return -1;
+}
+
 int print_playing(string[] players, string[] filters, int num_chars) {
     if (players.length == 0) {
-        writeln("Error: No players configured.");
-        return -1;
+        return display_error("No players configured");
     }
 
     string cmd = format("playerctl --player=%s metadata --format \"{{ artist }} - {{ title }}\"",
@@ -57,47 +61,26 @@ int print_playing(string[] players, string[] filters, int num_chars) {
     return 0;
 }
 
-string[] read_players_cfg(string cfg_file) {
-    string[] players = new string[0];
-    if (!exists(cfg_file))
-         return players;
+string[] read_cfg(string cfg_file) {
+    string[] items = new string[0];
+    if (!exists(cfg_file)) {
+        return items;
+    }
 
     auto f = File(cfg_file);
     foreach (line; f.byLine()) {
         string l = strip(to!string(line));
-        if (l.startsWith("#")) {
-            // Ignore any comment lines in configuration file.
-            continue;
-        }
+        // Ignore any comment lines in configuration file.
+        if (!l.startsWith("#")) {
+            if (cfg_file == "/etc/now_playing/players.cfg") {
+                l = l.toLower(); // players should be in lowercase.
+            }
 
-        players ~= l.toLower(); // Append player (priority order).
+            items ~= l; // Append player (priority order) or filters.
+        }
     }
 
-    return players;
-}
-
-string[] read_filters_cfg(string cfg_file) {
-    string[] filters = new string[0];
-    if (!exists(cfg_file))
-        return filters;
-
-    auto f = File(cfg_file);
-    foreach (line; f.byLine()) {
-        string l = strip(to!string(line));
-        if (l.startsWith('#')) {
-            // Ignore any comment lines in configuration file.
-            continue;
-        }
-
-        filters ~= l; // Append each filter.
-    }
-
-    return filters;
-}
-
-int display_error(string message) {
-    writefln("Error: %s.\n", message);
-    return -1;
+    return items;
 }
 
 int display_usage(string program, int num_chars) {
@@ -143,8 +126,8 @@ int main(string[] args) {
 
     immutable string cfg_dir = "/etc/now_playing";
 
-    return print_playing
-    (read_players_cfg(format("%s/players.cfg", cfg_dir)),
-     read_filters_cfg(format("%s/filters.cfg", cfg_dir)),
-     num_chars);
+    return print_playing(
+    read_cfg(format("%s/players.cfg", cfg_dir)),
+    read_cfg(format("%s/filters.cfg", cfg_dir)),
+    num_chars);
 }
